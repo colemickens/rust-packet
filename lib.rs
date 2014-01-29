@@ -267,7 +267,7 @@ pub fn decode_ipv4_header(h: &[u8]) -> Option<Ipv4Header> {
         flags:          (h[6] >> 5) & 0b00000111,
         frag_offset:    (h[6] as u16 << 8 | h[7] as u16) & 0b0001111111111111,
         ttl:            h[8],
-        protocol:       match(h[9]) { 0x06 => { TCP }, _ => { UserDatagram } },
+        protocol:       match h[9] { 0x06 => { TCP }, _ => { UserDatagram } },
         checksum:       h[10] as u16 << 8 | h[11] as u16,
         src_ip:         Ipv4Addr(h[12], h[13], h[14], h[15]),
         dst_ip:         Ipv4Addr(h[16], h[17], h[18], h[19]),
@@ -275,7 +275,7 @@ pub fn decode_ipv4_header(h: &[u8]) -> Option<Ipv4Header> {
     })
 }
 
-pub fn decode_ipv6_header(h: &[u8]) -> Option<Ipv6Header> {
+pub fn decode_ipv6_header(_h: &[u8]) -> Option<Ipv6Header> {
     None
 }
 
