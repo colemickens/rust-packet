@@ -51,6 +51,7 @@ pub struct Ipv4Header {
 }
 impl Ipv4Header {
     pub fn len(&self) -> uint { self.ihl as uint *4 }
+
     /*
     pub fn set_len(&self) -> {
         // need to set ihl
@@ -58,6 +59,7 @@ impl Ipv4Header {
         // and check it based on options... etc, sigh
     }
     */
+
     pub fn checksum(&self) -> u16 {
         let byts = self.as_bytes();
 
