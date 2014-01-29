@@ -1,2 +1,4 @@
+*.so
 .rust
 bin/
+pktutil_test
