@@ -132,13 +132,24 @@ fn test_encode_udp() {
 
     let payload = [0x4d, 0x2d, 0x53, 0x45, 0x41, 0x52, 0x43, 0x48, 0x20, 0x2a, 0x20, 0x48, 0x54, 0x54, 0x50, 0x2f, 0x31, 0x2e, 0x31, 0x0d, 0x0a];
 
+    /*
+    just me playing around
+
+    mk_eth_pkt(dst_mac, src_mac, ethertype, 
+        mk_ipv4_pkt(diff_services, ecn, total_len??, id, flags, frag_offset, ttl, checksum??, src_ip, dst_ip, ihl???, protocol??, options???,
+            mk_udp_pkt(src_post, dst_post, length, checksum,
+                payload
+            )
+        )
+    );
+    */
     let eth_hdr = EthernetHeader{
         dst_mac:   ~[0xff, 0xff, 0xff, 0xff, 0xff, 0xff],
         src_mac:   ~[0x30, 0x85, 0xa9, 0x40, 0x09, 0x35],
         ethertype: Ethertype_IP,
     };
 
-    let ip_hdr = Ipv4Header{
+    let mut ip_hdr = Ipv4Header{
         version:       4,
         diff_services: 0x00,
         ecn:           0x00,
@@ -159,6 +170,7 @@ fn test_encode_udp() {
     println!("checksum: {:?}", checksum);
     println!("checksum: {:?}", 0x8f37);
     assert_eq!(checksum, 0x8f37);
+    ip_hdr.checksum = checksum; // this is what I want to make part of an api. build_ipv4_pkt() or something that will do this automatically
 
     let udp_hdr = UdpHeader{
         src_port:  48301,
@@ -187,7 +199,7 @@ fn test_encode_tcp() {
         ethertype: Ethertype_IP,
     };
 
-    let ip_hdr = Ipv4Header{
+    let mut ip_hdr = Ipv4Header{
         version:       4,
         diff_services: 0x00,
         ecn:           0x00,
@@ -208,6 +220,7 @@ fn test_encode_tcp() {
     println!("checksum: {:?}", checksum);
     println!("checksum: {:?}", 0xc73c);
     assert_eq!(checksum, 0xc73c);
+    ip_hdr.checksum = checksum; // cheat
 
     let tcp_flags = TcpFlags{
         ns: false,

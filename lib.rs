@@ -362,18 +362,6 @@ pub fn decode_packet<'r>(payload: &'r [u8]) -> DecodedPacket<'r> {
     }
 }
 
-pub fn encode_packet(pkt: DecodedPacket) -> ~[u8] {
-    match pkt {
-        UdpPacket(ether_hdr, ip_hdr, udp_hdr, payload) => {
-            let mut byts = ether_hdr.as_bytes();
-            byts.push_all(ip_hdr.as_bytes());
-            byts.push_all(udp_hdr.as_bytes());
-            byts.push_all(payload);
-            byts
-        }
-        _ => { fail!("unimplemented"); }
-    }
-}
 
 // pretty sure rust lang features can be leveraged all over the place to make this work better
 // especially because I think I'm making incorrect assumptions about link layers stuff... :/
