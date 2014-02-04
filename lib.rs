@@ -8,6 +8,30 @@
 use std::io::net::ip;
 use std::io::net::ip::Ipv4Addr;
 
+fn chksumbytes(byts: &[u8]) -> u16 {
+    let mut checksum: u32 = 0;
+    let mut i = 0;
+    let mut len = byts.len();
+    loop {
+        let snip = byts[i] as u16 << 8 | byts[i+1] as u16;
+        checksum += snip as u32;
+        if (checksum & 0x80000000) == 0x80000000 {
+            checksum = (checksum & 0xFFFF) + (checksum >> 16);
+        }
+        i += 2;
+        len -= 2;
+        if !(len > 1) { break; }
+    }
+    if len > 0 { 
+        checksum += byts[i] as u32;
+    }
+    checksum = (checksum >> 16) + (checksum & 0xFFFF);
+    checksum += (checksum >> 16);
+    checksum = !checksum; // uhhhhhhh
+    //self.checksum = checksum as u16;
+    return checksum as u16;
+}
+
 pub struct EthernetHeader {
     dst_mac:    ~[u8],
     src_mac:    ~[u8],
@@ -50,40 +74,12 @@ pub struct Ipv4Header {
     options:       ~[u8],
 }
 impl Ipv4Header {
-    pub fn len(&self) -> uint { self.ihl as uint *4 }
+    pub fn len(&self) -> uint { self.ihl as uint * 4 }
 
-    /*
-    pub fn set_len(&self) -> {
-        // need to set ihl
-        // and total_len
-        // and check it based on options... etc, sigh
-    }
-    */
+    pub fn total_len(&self) -> uint { 100 } // fix this dont use
 
     pub fn checksum(&self) -> u16 {
-        let byts = self.as_bytes();
-
-        let mut checksum: u32 = 0;
-        let mut i = 0;
-        let mut len = byts.len();
-        loop {
-            let snip = byts[i] as u16 << 8 | byts[i+1] as u16;
-            checksum += snip as u32;
-            if (checksum & 0x80000000) == 0x80000000 {
-                checksum = (checksum & 0xFFFF) + (checksum >> 16);
-            }
-            i += 2;
-            len -= 2;
-            if !(len > 1) { break; }
-        }
-        if len > 0 { 
-            checksum += byts[i] as u32;
-        }
-        checksum = (checksum >> 16) + (checksum & 0xFFFF);
-        checksum += (checksum >> 16);
-        checksum = !checksum; // uhhhhhhh
-        //self.checksum = checksum as u16;
-        return checksum as u16;
+        chksumbytes(self.as_bytes())
     }
     pub fn as_bytes(&self) -> ~[u8] {
         match (self.src_ip, self.dst_ip) {
@@ -215,6 +211,22 @@ impl UdpHeader {
             (self.checksum >> 8) as u8,
             self.checksum as u8,
         ]
+    }
+    pub fn ipv4_checksum(&self, src: ip::IpAddr, dst: ip::IpAddr) -> u16 {
+        let l = self.length;
+        match (src, dst) {
+            (Ipv4Addr(a,b,c,d), Ipv4Addr(e,f,g,h)) => {
+                let mut byts: ~[u8] = ~[
+                    a, b, c, d,
+                    e, f, g, h,
+                    0x00, 0x11,
+                    (l >> 8) as u8, l as u8,
+                ];
+                byts.push_all(self.as_bytes());
+                return chksumbytes(byts)
+            }
+            (_, _) => { fail!(); }
+        }        
     }
 }
 
