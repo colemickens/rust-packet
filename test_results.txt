@@ -1,0 +1,21 @@
+./pktutil_test
+
+running 5 tests
+task 'test_decode_udp_packet' failed at 'assertion failed: `(left == right) && (right == left)` (left: `0u16`, right: `2u16`)', test.rs:51
+task 'test_decode_udp_packet2' failed at 'assertion failed: `(left == right) && (right == left)` (left: `0u16`, right: `1u16`)', test.rs:100
+task 'test_encode_udp' failed at 'assertion failed: `(left == right) && (right == left)` (left: `36665u16`, right: `36663u16`)', test.rs:221
+test test_decode_tcp_packet ... ok
+task 'test_encode_udp2' failed at 'assertion failed: `(left == right) && (right == left)` (left: `22153u16`, right: `22152u16`)', test.rs:276
+test test_decode_udp_packet ... FAILED
+test test_decode_udp_packet2 ... FAILED
+test test_encode_udp ... FAILED
+test test_encode_udp2 ... FAILED
+
+failures:
+    test_decode_udp_packet
+    test_decode_udp_packet2
+    test_encode_udp
+    test_encode_udp2
+
+test result: FAILED. 1 passed; 4 failed; 0 ignored; 0 measured
+
