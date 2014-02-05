@@ -213,16 +213,16 @@ impl UdpHeader {
         ]
     }
     pub fn ipv4_checksum(&self, src: ip::IpAddr, dst: ip::IpAddr) -> u16 {
-        let l = self.length;
         match (src, dst) {
             (Ipv4Addr(a,b,c,d), Ipv4Addr(e,f,g,h)) => {
                 let mut byts: ~[u8] = ~[
-                    a, b, c, d,
-                    e, f, g, h,
-                    0x00, 0x11,
-                    (l >> 8) as u8, l as u8,
+                    // This is the IPV4 Psuedo Header
+                    a, b, c, d, // src
+                    e, f, g, h, // dst
+                    0x00, 0x11, // zeroes + protocol
+                    (self.length >> 8) as u8, self.length as u8, // UDP Length
                 ];
-                byts.push_all(self.as_bytes());
+                byts.push_all(self.as_bytes()); // Now add the actual UDP header itself
                 return chksumbytes(byts)
             }
             (_, _) => { fail!(); }
