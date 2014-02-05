@@ -1,4 +1,5 @@
 *.so
+*.rlib
 .rust
 bin/
 pktutil_test
