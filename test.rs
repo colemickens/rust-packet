@@ -100,7 +100,7 @@ fn test_decode_udp_packet2() {
             assert_eq!(0, ip_hdr.checksum());
             assert_eq!(0, udp_hdr.ipv4_checksum(ip_hdr.src_ip, ip_hdr.dst_ip, payload));
             
-            assert_eq!(payload.len(), 36);
+            assert_eq!(payload.len(), 28);
             assert_eq!(payload, expected_payload);
         }, 
         g => { println!("{:?}", g); fail!("wrong packet type to start out with"); }

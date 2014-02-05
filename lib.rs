@@ -5,47 +5,31 @@
 
 #[feature(globs)];
 
-extern mod extra;
-
 use std::io::net::ip;
 use std::io::net::ip::Ipv4Addr;
 use std::iter::range_step_inclusive;
 
-use extra::hex::*;
-
-fn chksumbytes_(byts: &[u8]) -> u16 {
-    let mut checksum: u16 = 0;
+fn chksumbytes(byts: &[u8]) -> u16 {
+    let mut checksum: u32 = 0;
     let len = byts.len();
     let padd = (len % 2);
 
     for i in range_step_inclusive(0, len-1-padd, 2) {
         let snip = byts[i] as u16 << 8 | byts[i+1] as u16;
-        checksum += snip as u16;
+        checksum += snip as u32;
     }
     if padd != 0 {
-        checksum += byts[len-1] as u16 << 8;
+        checksum += byts[len-1] as u32 << 8;
     }
-    checksum = !checksum; // uhhhhhhh
+    loop {
+        let y = checksum >> 16;
+        if y == 0 { break; }
+
+        checksum = (checksum & 0xffff) + y
+    }
+    checksum = !checksum;
     return checksum as u16;
 }
-
-/*********** cut *************/
-                    fn chksumbytes(byts: &[u8]) -> u16 {
-                        let mut checksum: u16 = 0;
-                        let len = byts.len();
-                        let padd = (len % 2);
-
-                        for i in range_step_inclusive(0, len-1-padd, 2) {
-                            let snip = byts[i] as u16 << 8 | byts[i+1] as u16;
-                            checksum += snip as u16;
-                        }
-                        if padd != 0 {
-                            checksum += byts[len-1] as u16 << 8;
-                        }
-                        checksum = !checksum; // uhhhhhhh
-                        return checksum as u16;
-                    }
-/*********** /cut ************/
 
 pub struct EthernetHeader {
     dst_mac:    ~[u8],
@@ -239,8 +223,6 @@ impl UdpHeader {
                 ];
                 byts.push_all(self.as_bytes()); // Now add the actual UDP header itself
                 byts.push_all(payload.to_owned());
-                
-                println!("{:?}", byts.to_hex());
 
                 return chksumbytes(byts)
             }
