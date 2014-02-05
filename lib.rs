@@ -5,30 +5,27 @@
 
 #[feature(globs)];
 
+extern mod extra;
+
 use std::io::net::ip;
 use std::io::net::ip::Ipv4Addr;
+use std::iter::range_step_inclusive;
+
+use extra::hex::*;
 
 fn chksumbytes(byts: &[u8]) -> u16 {
-    let mut checksum: u32 = 0;
-    let mut i = 0;
-    let mut len = byts.len();
-    loop {
+    let mut checksum: u16 = 0;
+    let len = byts.len();
+    let padd = (len % 2);
+
+    for i in range_step_inclusive(0, len-1-padd, 2) {
         let snip = byts[i] as u16 << 8 | byts[i+1] as u16;
-        checksum += snip as u32;
-        if (checksum & 0x80000000) == 0x80000000 {
-            checksum = (checksum & 0xFFFF) + (checksum >> 16);
-        }
-        i += 2;
-        len -= 2;
-        if !(len > 1) { break; }
+        checksum += snip as u16;
     }
-    if len > 0 { 
-        checksum += byts[i] as u32;
+    if padd != 0 {
+        checksum += byts[len-1] as u16 << 8;
     }
-    checksum = (checksum >> 16) + (checksum & 0xFFFF);
-    checksum += (checksum >> 16);
     checksum = !checksum; // uhhhhhhh
-    //self.checksum = checksum as u16;
     return checksum as u16;
 }
 
@@ -212,7 +209,7 @@ impl UdpHeader {
             self.checksum as u8,
         ]
     }
-    pub fn ipv4_checksum(&self, src: ip::IpAddr, dst: ip::IpAddr) -> u16 {
+    pub fn ipv4_checksum(&self, src: ip::IpAddr, dst: ip::IpAddr, payload: &[u8]) -> u16 {
         match (src, dst) {
             (Ipv4Addr(a,b,c,d), Ipv4Addr(e,f,g,h)) => {
                 let mut byts: ~[u8] = ~[
@@ -223,6 +220,10 @@ impl UdpHeader {
                     (self.length >> 8) as u8, self.length as u8, // UDP Length
                 ];
                 byts.push_all(self.as_bytes()); // Now add the actual UDP header itself
+                byts.push_all(payload.to_owned());
+                
+                println!("{:?}", byts.to_hex());
+
                 return chksumbytes(byts)
             }
             (_, _) => { fail!(); }
