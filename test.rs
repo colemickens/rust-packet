@@ -16,10 +16,9 @@ fn test_decode_udp_packet() {
 
     // 0000   ff ff ff ff ff ff 30 85 a9 40 09 35 08 00 45 00  ......0..@.5..E.
     // 0010   00 31 27 33 40 00 40 11 8f 37 c0 a8 01 02 c0 a8  .1'3@.@..7......
-    // 0020   01 ff bc ad 7e 9c 00 1d c9 d9 4d 2d 53 45 41 52  ....~.....M-SEAR
+    // 0020   01 ff bc ad 7e 9c 00 1d c9 d9|4d 2d 53 45 41 52  ....~.....M-SEAR
     // 0030   43 48 20 2a 20 48 54 54 50 2f 31 2e 31 0d 0a     CH * HTTP/1.1..
 
-    // ffffffffffff3085a94009350800450000312733400040118f37c0a80102c0a801ffbcad7e9c001dc9d94d2d534541524348202a20485454502f312e310d0a
     let expected_payload = [0x4d, 0x2d, 0x53, 0x45, 0x41, 0x52, 0x43, 0x48, 0x20, 0x2a, 0x20, 0x48, 0x54, 0x54, 0x50, 0x2f, 0x31, 0x2e, 0x31, 0x0d, 0x0a];
 
     let pkt = decode_packet(dns_pkt);
@@ -47,9 +46,61 @@ fn test_decode_udp_packet() {
             assert_eq!(udp_hdr.src_port, 48301);
             assert_eq!(udp_hdr.dst_port, 32412);
             assert_eq!(udp_hdr.length, 29);
-            assert_eq!(udp_hdr.checksum, 0x0c9d9);
+            assert_eq!(udp_hdr.checksum, 0xc9d9);
+
+            assert_eq!(0, ip_hdr.checksum());
+            assert_eq!(0, udp_hdr.ipv4_checksum(ip_hdr.src_ip, ip_hdr.dst_ip, payload));
             
             assert_eq!(payload.len(), 21);
+            assert_eq!(payload, expected_payload);
+        }, 
+        g => { println!("{:?}", g); fail!("wrong packet type to start out with"); }
+    }
+}
+
+#[test]
+fn test_decode_udp_packet2() {
+    let dns_pkt: &[u8] = [0x2c, 0xb0, 0x5d, 0x35, 0x46, 0xae, 0x30, 0x85, 0xa9, 0x40, 0x09, 0x35, 0x08, 0x00, 0x45, 0x00, 0x00, 0x38, 0x12, 0x73, 0x40, 0x00, 0x40, 0x11, 0x56, 0x88, 0xc0, 0xa8, 0x01, 0x02, 0x08, 0x08, 0x08, 0x08, 0x3e, 0x3e, 0x00, 0x35, 0x00, 0x24, 0x55, 0x52, 0xf2, 0x5d, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x6c, 0x04, 0x79, 0x69, 0x6d, 0x67, 0x03, 0x63, 0x6f, 0x6d, 0x00, 0x00, 0x01, 0x00, 0x01];
+
+    // 0000   2c b0 5d 35 46 ae 30 85 a9 40 09 35 08 00 45 00  ,.]5F.0..@.5..E.
+    // 0010   00 38 12 73 40 00 40 11 56 88 c0 a8 01 02 08 08  .8.s@.@.V.......
+    // 0020   08 08 3e 3e 00 35 00 24 55 52|f2 5d 01 00 00 01  ..>>.5.$UR.]....
+    // 0030   00 00 00 00 00 00 01 6c 04 79 69 6d 67 03 63 6f  .......l.yimg.co
+    // 0040   6d 00 00 01 00 01                                m.....
+    
+    let expected_payload = [0xf2, 0x5d, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x6c, 0x04, 0x79, 0x69, 0x6d, 0x67, 0x03, 0x63, 0x6f, 0x6d, 0x00, 0x00, 0x01, 0x00, 0x01];
+
+    let pkt = decode_packet(dns_pkt);
+    
+    match pkt {
+        UdpPacket(eth_hdr, ip_hdr,  udp_hdr,  payload) => {
+            let dst_mac = ~[0x2c, 0xb0, 0x5d, 0x35, 0x46, 0xae];
+            let src_mac = ~[0x30, 0x85, 0xa9, 0x40, 0x09, 0x35];
+            assert_eq!(eth_hdr.dst_mac, dst_mac);
+            assert_eq!(eth_hdr.src_mac, src_mac);
+            assert_eq!(eth_hdr.ethertype, Ethertype_IP);
+
+            assert_eq!(ip_hdr.version, 4);
+            assert_eq!(ip_hdr.diff_services, 0x00);
+            assert_eq!(ip_hdr.total_len, 56);
+            assert_eq!(ip_hdr.id, 0x1273);
+            assert_eq!(ip_hdr.flags, 0x02);            
+            assert_eq!(ip_hdr.frag_offset, 0);
+            assert_eq!(ip_hdr.ttl, 64);
+            assert_eq!(ip_hdr.protocol, UserDatagram);
+            assert_eq!(ip_hdr.checksum, 0x5688);
+            assert_eq!(ip_hdr.src_ip, Ipv4Addr(192, 168, 1, 2));
+            assert_eq!(ip_hdr.dst_ip, Ipv4Addr(8, 8, 8, 8));
+            
+            assert_eq!(udp_hdr.src_port, 15934);
+            assert_eq!(udp_hdr.dst_port, 53);
+            assert_eq!(udp_hdr.length, 36);
+            assert_eq!(udp_hdr.checksum, 0x5552);
+
+            assert_eq!(0, ip_hdr.checksum());
+            assert_eq!(0, udp_hdr.ipv4_checksum(ip_hdr.src_ip, ip_hdr.dst_ip, payload));
+            
+            assert_eq!(payload.len(), 36);
             assert_eq!(payload, expected_payload);
         }, 
         g => { println!("{:?}", g); fail!("wrong packet type to start out with"); }
@@ -132,17 +183,6 @@ fn test_encode_udp() {
 
     let payload: &[u8] = [0x4d, 0x2d, 0x53, 0x45, 0x41, 0x52, 0x43, 0x48, 0x20, 0x2a, 0x20, 0x48, 0x54, 0x54, 0x50, 0x2f, 0x31, 0x2e, 0x31, 0x0d, 0x0a];
 
-    /*
-    just me playing around
-
-    mk_eth_pkt(dst_mac, src_mac, ethertype, 
-        mk_ipv4_pkt(diff_services, ecn, total_len??, id, flags, frag_offset, ttl, checksum??, src_ip, dst_ip, ihl???, protocol??, options???,
-            mk_udp_pkt(src_post, dst_post, length, checksum,
-                payload
-            )
-        )
-    );
-    */
     let eth_hdr = EthernetHeader{
         dst_mac:   ~[0xff, 0xff, 0xff, 0xff, 0xff, 0xff],
         src_mac:   ~[0x30, 0x85, 0xa9, 0x40, 0x09, 0x35],
@@ -178,9 +218,65 @@ fn test_encode_udp() {
     ip_hdr.total_len = 20u16 + udp_hdr.len() as u16 + payload.len() as u16;
     
     ip_hdr.checksum = ip_hdr.checksum();
+    assert_eq!(ip_hdr.checksum, 0x8f37); // fix
+    
     udp_hdr.checksum = udp_hdr.ipv4_checksum(ip_hdr.src_ip, ip_hdr.dst_ip, payload);
     assert_eq!(udp_hdr.checksum, 0xc9d9);
     // (left: `51678u16`, right: `51673u16`)
+
+    let mut res_bytes = eth_hdr.as_bytes();
+    res_bytes.push_all(ip_hdr.as_bytes());
+    res_bytes.push_all(udp_hdr.as_bytes());
+    res_bytes.push_all(payload);
+
+    assert_eq!(res_bytes, expected); // make expected &[u8] and then what here?
+}
+
+
+#[test]
+fn test_encode_udp2() {
+    let expected: ~[u8] = ~[ 0x2c, 0xb0, 0x5d, 0x35, 0x46, 0xae, 0x30, 0x85, 0xa9, 0x40, 0x09, 0x35, 0x08, 0x00, 0x45, 0x00, 0x00, 0x38, 0x12, 0x73, 0x40, 0x00, 0x40, 0x11, 0x56, 0x88, 0xc0, 0xa8, 0x01, 0x02, 0x08, 0x08, 0x08, 0x08, 0x3e, 0x3e, 0x00, 0x35, 0x00, 0x24, 0x55, 0x52, 0xf2, 0x5d, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x6c, 0x04, 0x79, 0x69, 0x6d, 0x67, 0x03, 0x63, 0x6f, 0x6d, 0x00, 0x00, 0x01, 0x00, 0x01 ];
+    let payload: &[u8] = [ 0xf2, 0x5d, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x6c, 0x04, 0x79, 0x69, 0x6d, 0x67, 0x03, 0x63, 0x6f, 0x6d, 0x00, 0x00, 0x01, 0x00, 0x01];
+
+    let eth_hdr = EthernetHeader{
+        dst_mac:   ~[0x2c, 0xb0, 0x5d, 0x35, 0x46, 0xae],
+        src_mac:   ~[0x30, 0x85, 0xa9, 0x40, 0x09, 0x35],
+        ethertype: Ethertype_IP,
+    };
+
+    let mut udp_hdr = UdpHeader{
+        src_port:  15934,
+        dst_port:  53,
+        length:    36,
+        checksum:  0x0000, // remove this cheat
+    };
+
+    udp_hdr.length = (payload.len() + 8) as u16;
+
+    let mut ip_hdr = Ipv4Header{
+        version:       4,
+        diff_services: 0x00,
+        ecn:           0x00,
+        total_len:     56,
+        id:            0x1273,
+        flags:         0x02,
+        frag_offset:   0,
+        ttl:           64,
+        checksum:      0x0000, // remove this cheat
+        src_ip:        Ipv4Addr(192, 168, 1, 2),
+        dst_ip:        Ipv4Addr(8, 8, 8, 8),
+        ihl:           5,
+        protocol:      UserDatagram,
+        options:       ~[],
+    };
+
+    ip_hdr.total_len = 20u16 + udp_hdr.len() as u16 + payload.len() as u16;
+    
+    ip_hdr.checksum = ip_hdr.checksum();
+    assert_eq!(ip_hdr.checksum, 0x5688);
+
+    udp_hdr.checksum = udp_hdr.ipv4_checksum(ip_hdr.src_ip, ip_hdr.dst_ip, payload);
+    assert_eq!(udp_hdr.checksum, 0x5552);
 
     let mut res_bytes = eth_hdr.as_bytes();
     res_bytes.push_all(ip_hdr.as_bytes());
