@@ -1,14 +1,14 @@
-extern mod pktutil;
+extern mod packet;
 
 use std::io::net::ip::Ipv4Addr;
 use std::io::net::ip;
 
-use pktutil::decode_packet;
-use pktutil::{UdpPacket,TcpPacket};
-use pktutil::{EthernetHeader,Ipv4Header,UdpHeader,TcpFlags,TcpHeader};
+use packet::decode_packet;
+use packet::{UdpPacket,TcpPacket};
+use packet::{EthernetHeader,Ipv4Header,UdpHeader,TcpFlags,TcpHeader};
 
-use pktutil::{UserDatagram,TCP};
-use pktutil::{Ethertype_IP};
+use packet::{UserDatagram,TCP};
+use packet::{Ethertype_IP};
 
 #[test]
 fn test_decode_udp_packet() {

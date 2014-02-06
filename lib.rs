@@ -1,4 +1,4 @@
-#[crate_id="pktutil"];
+#[crate_id="packet"];
 #[crate_type="lib"];
 #[desc = "A Rust package providing packet decoding"];
 #[license = "MIT"];
