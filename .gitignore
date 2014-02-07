@@ -3,3 +3,5 @@
 .rust
 bin/
 pktutil_test
+*.dll
+*.exe
