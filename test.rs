@@ -1,4 +1,4 @@
-extern mod packet;
+extern crate packet;
 
 use std::io::net::ip::Ipv4Addr;
 use std::io::net::ip;
