@@ -1,0 +1,36 @@
+lib.rs:41:22: 41:34 error: mismatched types: expected `&[u8]` but found `std::vec::Vec<u8>` (expected &-ptr but found struct std::vec::Vec)
+lib.rs:41         res.push_all(self.dst_mac);
+                               ^~~~~~~~~~~~
+lib.rs:42:22: 42:34 error: mismatched types: expected `&[u8]` but found `std::vec::Vec<u8>` (expected &-ptr but found struct std::vec::Vec)
+lib.rs:42         res.push_all(self.src_mac);
+                               ^~~~~~~~~~~~
+lib.rs:80:21: 80:36 error: mismatched types: expected `&[u8]` but found `std::vec::Vec<u8>` (expected &-ptr but found struct std::vec::Vec)
+lib.rs:80         chksumbytes(self.as_bytes())
+                              ^~~~~~~~~~~~~~~
+lib.rs:101:30: 101:42 error: mismatched types: expected `&[u8]` but found `std::vec::Vec<u8>` (expected &-ptr but found struct std::vec::Vec)
+lib.rs:101                 res.push_all(self.options);
+                                        ^~~~~~~~~~~~
+lib.rs:187:22: 187:34 error: mismatched types: expected `&[u8]` but found `std::vec::Vec<u8>` (expected &-ptr but found struct std::vec::Vec)
+lib.rs:187         res.push_all(self.options);
+                                ^~~~~~~~~~~~
+lib.rs:223:31: 223:46 error: mismatched types: expected `&[u8]` but found `std::vec::Vec<u8>` (expected &-ptr but found struct std::vec::Vec)
+lib.rs:223                 byts.push_all(self.as_bytes()); // Now add the actual UDP header itself
+                                         ^~~~~~~~~~~~~~~
+lib.rs:226:36: 226:40 error: mismatched types: expected `&[u8]` but found `std::vec::Vec<u8>` (expected &-ptr but found struct std::vec::Vec)
+lib.rs:226                 return chksumbytes(byts)
+                                              ^~~~
+lib.rs:257:21: 257:28 error: mismatched types: expected `std::vec::Vec<u8>` but found `~[u8]` (expected struct std::vec::Vec but found ~-ptr)
+lib.rs:257         dst_mac:    dst_mac,
+                               ^~~~~~~
+lib.rs:258:21: 258:28 error: mismatched types: expected `std::vec::Vec<u8>` but found `~[u8]` (expected struct std::vec::Vec but found ~-ptr)
+lib.rs:258         src_mac:    src_mac,
+                               ^~~~~~~
+lib.rs:288:25: 288:73 error: mismatched types: expected `std::vec::Vec<u8>` but found `~[u8]` (expected struct std::vec::Vec but found ~-ptr)
+lib.rs:288         options:        h.slice(20, 20+(4*(ihl as uint - 5))).to_owned(),
+                                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+lib.rs:322:23: 322:70 error: mismatched types: expected `std::vec::Vec<u8>` but found `~[u8]` (expected struct std::vec::Vec but found ~-ptr)
+lib.rs:322         options:      h.slice(20, (data_offset as uint)*4).to_owned(),
+                                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error: aborting due to 11 previous errors
+Makefile:2: recipe for target 'all' failed
+make: *** [all] Error 101

@@ -1,9 +1,7 @@
-#[crate_id="packet"];
-#[crate_type="lib"];
-#[desc = "A Rust package providing packet decoding"];
-#[license = "MIT"];
-
-#[feature(globs)];
+#![crate_id="packet"]
+#![crate_type="lib"]
+#![desc = "A Rust package providing packet decoding"]
+#![license = "MIT"]
 
 use std::io::net::ip;
 use std::io::net::ip::Ipv4Addr;
@@ -12,7 +10,7 @@ use std::iter::range_step_inclusive;
 fn chksumbytes(byts: &[u8]) -> u16 {
     let mut checksum: u32 = 0;
     let len = byts.len();
-    let padd = (len % 2);
+    let padd = len % 2;
 
     for i in range_step_inclusive(0, len-1-padd, 2) {
         let snip = byts[i] as u16 << 8 | byts[i+1] as u16;
@@ -32,14 +30,14 @@ fn chksumbytes(byts: &[u8]) -> u16 {
 }
 
 pub struct EthernetHeader {
-    dst_mac:    ~[u8],
-    src_mac:    ~[u8],
+    dst_mac:    Vec<u8>,
+    src_mac:    Vec<u8>,
     ethertype:  Ethertype,
 }
 impl EthernetHeader {
     pub fn len(&self) -> uint { 14 }
-    pub fn as_bytes(&self) -> ~[u8] {
-        let mut res: ~[u8] = ~[];
+    pub fn as_bytes(&self) -> Vec<u8> {
+        let mut res: Vec<u8> = vec!();
         res.push_all(self.dst_mac);
         res.push_all(self.src_mac);
         res.push( (self.ethertype as u16 >> 8) as u8  );
@@ -48,6 +46,7 @@ impl EthernetHeader {
     }
 }
 
+#[allow(non_camel_case_types)]
 #[deriving(Eq)]
 pub enum Ethertype {
     Ethertype_IP = 0x0800,
@@ -70,7 +69,7 @@ pub struct Ipv4Header {
     checksum:      u16,
     src_ip:        ip::IpAddr,
     dst_ip:        ip::IpAddr,
-    options:       ~[u8],
+    options:       Vec<u8>,
 }
 impl Ipv4Header {
     pub fn len(&self) -> uint { self.ihl as uint * 4 }
@@ -80,10 +79,10 @@ impl Ipv4Header {
     pub fn checksum(&self) -> u16 {
         chksumbytes(self.as_bytes())
     }
-    pub fn as_bytes(&self) -> ~[u8] {
+    pub fn as_bytes(&self) -> Vec<u8> {
         match (self.src_ip, self.dst_ip) {
             (Ipv4Addr(a,b,c,d), Ipv4Addr(g,h,i,j)) => {
-                let mut res: ~[u8] = ~[
+                let mut res: Vec<u8> = vec!(
                     self.version << 4 | self.ihl,
                     self.diff_services << 6 | (self.ecn & 0b00000011),
                     (self.total_len >> 8) as u8,
@@ -98,7 +97,7 @@ impl Ipv4Header {
                     (self.checksum >> 8) as u8,
                     self.checksum as u8,
                     a, b, c, d, g, h, i, j
-                ];
+                );
                 res.push_all(self.options);
                 return res
             }
@@ -141,11 +140,11 @@ pub struct TcpHeader {
     window_size:  u16,
     checksum:     u16,
     urgent_ptr:   u16,
-    options:      ~[u8],
+    options:      Vec<u8>,
 }
 impl TcpHeader {
     pub fn len(&self) -> uint { self.data_offset as uint *4 }
-    pub fn as_bytes(&self) -> ~[u8] {
+    pub fn as_bytes(&self) -> Vec<u8> {
         let flags_byte = self.data_offset << 4 | if self.flags.ns { 0b00000001 } else { 0 };
 
         let mut flags_byte2 = 0;        
@@ -158,7 +157,7 @@ impl TcpHeader {
         if self.flags.syn { flags_byte2 += 0b00000010 };
         if self.flags.fin { flags_byte2 += 0b00000001 };
 
-        let mut res: ~[u8] = ~[
+        let mut res: Vec<u8> = vec!(
             ((self.src_port as u16) >> 8) as u8,
             self.src_port as u8,
             ((self.dst_port as u16) >> 8) as u8,
@@ -183,7 +182,7 @@ impl TcpHeader {
             (self.checksum >> 0) as u8,
             (self.urgent_ptr >> 8) as u8,
             (self.urgent_ptr >> 0) as u8,
-        ];
+        );
 
         res.push_all(self.options);
 
@@ -199,8 +198,8 @@ pub struct UdpHeader {
 }
 impl UdpHeader {
     pub fn len(&self) -> uint { 8 }
-    pub fn as_bytes(&self) -> ~[u8] {
-        ~[
+    pub fn as_bytes(&self) -> Vec<u8> {
+        vec!(
             ((self.src_port as u16) >> 8) as u8,
             self.src_port as u8,
             ((self.dst_port as u16) >> 8) as u8,
@@ -209,18 +208,18 @@ impl UdpHeader {
             self.length as u8,
             (self.checksum >> 8) as u8,
             self.checksum as u8,
-        ]
+        )
     }
     pub fn ipv4_checksum(&self, src: ip::IpAddr, dst: ip::IpAddr, payload: &[u8]) -> u16 {
         match (src, dst) {
             (Ipv4Addr(a,b,c,d), Ipv4Addr(e,f,g,h)) => {
-                let mut byts: ~[u8] = ~[
+                let mut byts: Vec<u8> = vec!(
                     // This is the IPV4 Psuedo Header
                     a, b, c, d, // src
                     e, f, g, h, // dst
                     0x00, 0x11, // zeroes + protocol
                     (self.length >> 8) as u8, self.length as u8, // UDP Length
-                ];
+                );
                 byts.push_all(self.as_bytes()); // Now add the actual UDP header itself
                 byts.push_all(payload.to_owned());
 
